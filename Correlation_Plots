@@ -1,0 +1,201 @@
+# Set the parent directory where the "M*" folders are located
+parent_dir <- "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\Yield\\BLUPs\\"
+
+# List all folders that start with "M"
+model_folders <- list.dirs(parent_dir, recursive = FALSE, full.names = TRUE)
+model_folders <- model_folders[basename(model_folders) %in% grep("^M", basename(model_folders), value = TRUE)]
+
+# Initialize list to store data frames
+blup_list <- list()
+
+# Loop through each "M" folder
+for (folder in model_folders) {
+  # Find files in the folder that have "BLUP" in the name
+  blup_files <- list.files(folder, pattern = "BLUP", full.names = TRUE, ignore.case = TRUE)
+  
+  # Read each BLUP file and store in list
+  for (file in blup_files) {
+    blup_list[[file]] <- read.csv(file)  # or use read.table, fread, etc., depending on format
+  }
+}
+
+# Optional: Combine all data frames into one
+all_blups <- do.call(rbind, blup_list)
+
+###############################
+parent_dir <- "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\Yield\\BLUPs\\"
+
+# Find all .csv files in all subfolders under Yield
+csv_files <- list.files(parent_dir, pattern = "\\.csv$", full.names = TRUE, recursive = TRUE)
+
+# Initialize list to store data frames
+blup_list <- list()
+
+# Read each .csv file and store in list
+for (file in csv_files) {
+  blup_list[[file]] <- read.csv(file)
+}
+
+##############################
+
+name <- names(blup_list)[12]
+cat("\n===== File:", name, "=====\n")
+print(head(blup_list[[12]]))
+
+# Extract the first data frame
+df <- blup_list[[12]]
+
+patterns <- c("PHK76", "PHP02", "PHZ51")
+df <- blup_list[[12]][, c(1, 2)]
+colnames(df)[2] <- "Genotype"
+colnames(df)[1] <- "M4A_Yield_1_BLUP"
+df <- df[grepl(paste(patterns, collapse = "|"), df$Genotype), ]
+
+# Create a new data frame with only those two columns
+new_df <- df[, c("Genotype", "M4A_Yield_1_BLUP")]
+new_df <- new_df[!duplicated(new_df), ]
+
+write.csv(new_df, "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\YOLO\\DEH1.2020\\MLM\\BLUPS\\M4A_Yield_1_BLUP.csv")
+
+########################################
+
+
+# Folder where all BLUP .csv files are stored
+blup_folder <- "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\BLUPS"
+
+blup_files <- list.files(blup_folder, pattern = "\\.csv$", full.names = TRUE)
+
+blup_list <- list()
+
+for (file in blup_files) {
+  df <- read.csv(file)
+  
+  # Detect genotype column
+  genotype_col <- grep("genotype", names(df), ignore.case = TRUE, value = TRUE)[1]
+  
+  # Detect BLUP column explicitly by name
+  blup_col <- grep("blup", names(df), ignore.case = TRUE, value = TRUE)[1]
+  
+  if (is.na(genotype_col) | is.na(blup_col)) next  # skip if missing
+  
+  # Clean genotype values
+  df[[genotype_col]] <- trimws(gsub(":", "/", df[[genotype_col]]))
+  
+  # Keep only genotype and BLUP
+  df <- df[, c(genotype_col, blup_col)]
+  colnames(df) <- c("Genotype", tools::file_path_sans_ext(basename(file)))
+  
+  # Remove duplicate genotypes
+  df <- df[!duplicated(df$Genotype), ]
+  
+  blup_list[[file]] <- df
+}
+
+# Merge all by Genotype
+merged_blups <- Reduce(function(x, y) merge(x, y, by = "Genotype", all = TRUE), blup_list)
+
+
+write.csv(merged_blups, "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\BLUPs.csv")
+
+################################
+
+df <- read.csv("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\BLUPs.csv", sep = ",", header = T, check.names = F)
+df <- na.omit(df)
+library(corrplot)
+library(ggpubr)
+library(tidyverse)
+library(Hmisc)
+
+df1 <- df[,c(3:10)]
+#M <- cor(df1)
+#head(round(M,2))
+
+#corrplot(M, method = "circle")
+cor_2 <- rcorr(as.matrix(df1))
+M <- cor_2$r
+p_mat <- cor_2$P
+
+png("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\corrplot_M1A_M1C_M2A.png", width = 8, height = 6, units = "in", res = 300)
+
+col <- colorRampPalette(c("#BB4444","#EE9988","#FFFFFF","#77AADD","#4477AA"))
+corrplot(M, method = "color", col = col(200), mar = c(1, 1, 3, 1),
+         type = "upper", order = "hclust",
+         addCoef.col = "black",
+         tl.col = "darkblue", tl.srt = 45,
+         tl.cex = 0.7,     # text label size
+         cl.cex = 0.7,     # color legend size
+         number.cex = 0.7,
+         p.mat = p_mat, sig.level = 0.01,
+         diag = FALSE)
+title("Correlation Matrix of Models w/ Date Effects", line = 2.5, cex.main = 1.5)
+dev.off()
+
+################################
+
+library(corrplot)
+
+# Sample correlation matrices
+df1 <- df[,c(11:21)]
+df2 <- df[,c(22:32)]
+df3 <- df[,c(33:43)]
+
+cor_1 <- rcorr(as.matrix(df1))
+M1 <- cor_1$r
+p_mat1 <- cor_1$P
+
+cor_2 <- rcorr(as.matrix(df2))
+M2 <- cor_2$r
+p_mat2 <- cor_2$P
+
+cor_3 <- rcorr(as.matrix(df3))
+M3 <- cor_3$r
+p_mat3 <- cor_3$P
+# Set up 1 row, 3 columns layout
+
+#par(mfrow = c(1, 3), mar = c(1, 1, 3, 1))  # Adjust margins if needed
+
+png("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\M3A.png", width = 8, height = 6, units = "in", res = 300)
+
+# Plot each corrplot
+col <- colorRampPalette(c("#BB4444","#EE9988","#FFFFFF","#77AADD","#4477AA"))
+corrplot(M1, method = "color", col = col(200), mar = c(1, 1, 3, 1),
+         type = "upper", order = "hclust",
+         addCoef.col = "black",
+         tl.col = "darkblue", tl.srt = 45,
+         tl.cex = 0.7,     # text label size
+         cl.cex = 0.7,     # color legend size
+         number.cex = 0.7,
+         p.mat = p_mat1, sig.level = 0.01,
+         diag = FALSE)
+title("M3A", line = 2.5, cex.main = 1.5)
+dev.off()
+
+png("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\M3C.png", width = 8, height = 6, units = "in", res = 300)
+col <- colorRampPalette(c("#BB4444","#EE9988","#FFFFFF","#77AADD","#4477AA"))
+corrplot(M2, method = "color", col = col(200), mar = c(1, 1, 3, 1),
+         type = "upper", order = "hclust",
+         addCoef.col = "black",
+         tl.col = "darkblue", tl.srt = 45,
+         tl.cex = 0.7,     # text label size
+         cl.cex = 0.7,     # color legend size
+         number.cex = 0.7,
+         p.mat = p_mat2, sig.level = 0.01,
+         diag = FALSE)
+title("M3C", line = 2.5, cex.main = 1.5)
+dev.off()
+
+png("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\Variance_Components_BLUPs\\DEH1.2020_Only\\M4A.png", width = 8, height = 6, units = "in", res = 300)
+col <- colorRampPalette(c("#BB4444","#EE9988","#FFFFFF","#77AADD","#4477AA"))
+corrplot(M3, method = "color", col = col(200), mar = c(1, 1, 3, 1),
+         type = "upper", order = "hclust",
+         addCoef.col = "black",
+         tl.col = "darkblue", tl.srt = 45,
+         tl.cex = 0.7,     # text label size
+         cl.cex = 0.7,     # color legend size
+         number.cex = 0.7,
+         p.mat = p_mat3, sig.level = 0.01,
+         diag = FALSE)
+title("M4A", line = 2.5, cex.main = 1.5)
+
+dev.off()
+
