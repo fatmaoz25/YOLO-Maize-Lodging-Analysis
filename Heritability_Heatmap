@@ -1,0 +1,40 @@
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(patchwork)
+
+# Load data
+df <- read_csv("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\heritabilities.csv")
+
+# Create plot for each environment with reversed y-axis
+plot_env <- function(env_name) {
+  env_data <- df %>%
+    filter(Environment == env_name) %>%
+    mutate(Model = factor(Model, levels = sort(unique(df$Model))))  # Ascending top to bottom
+  
+  ggplot(env_data, aes(x = Phenotype, y = Model, fill = Heritability)) +
+    geom_tile(color = "white") +
+    geom_text(aes(label = round(Heritability, 3)), color = "white", size = 4) +
+    scale_fill_gradient(low = "pink", high = "darkblue") +
+    labs(title = paste("Environment:", env_name),
+         x = "Phenotype", y = "Model", fill = "Heritability") +
+    theme_minimal() +
+    theme(
+      axis.text = element_text(size = 12),
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      legend.position = "bottom",
+      legend.direction = "horizontal"
+    )
+}
+
+# Create and combine plots
+envs <- unique(df$Environment)
+plot1 <- plot_env(envs[1])
+plot2 <- plot_env(envs[2])
+plot3 <- plot_env(envs[3])
+
+
+combined_plot <- plot1 + plot2 + plot3 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+# Display
+combined_plot
