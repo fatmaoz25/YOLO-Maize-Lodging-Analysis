@@ -1,0 +1,39 @@
+locations <- read.csv('C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\YOLO\\Map_data.csv', header=T)
+head(locations)
+dim(locations)
+
+#generate U.S. map with state boundaries
+us_map <- map_data("state")
+
+#locations$flight_range <- cut(locations$Flights,
+                             #breaks = c(0, 10, 20, 30, 40, 50),
+                              #labels = c("1-10", "11-20", "21-30", "31-40", "41-50"),
+                              #right = TRUE)
+locations$Flights <- as.factor(locations$Flights)
+
+
+# Create the plot
+p <- ggplot() +
+  geom_polygon(data = us_map, aes(x=long, y=lat, group=group), fill="white", color="gray90") +
+  geom_point(data=locations, aes(x=Longitude, y=Latitude, color=Flights), size=2, position = position_jitter(width = 0.2, height = 0.2)) +
+  geom_text_repel(data=locations, aes(x=Longitude, y=Latitude, label=Location), size=3,
+                  position=position_jitter(width=0.5, height=0.5)) +
+  theme_bw() +
+  labs(title="", color="Number of Flights") +
+  scale_color_brewer(palette = "Set2", name = "Number of Flights") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    legend.background = element_rect(fill = alpha("gray80", 0.5), size = 0.5, linetype = "solid"),
+    legend.key.height = unit(0.1, 'cm'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(0.9, 0.15)
+  ) +
+  scale_x_continuous("Longitude") +
+  scale_y_continuous("Latitude")
+
+print(p)
