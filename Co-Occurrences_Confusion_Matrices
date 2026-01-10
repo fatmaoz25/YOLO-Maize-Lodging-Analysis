@@ -1,0 +1,21 @@
+library(corrplot)
+library(ggplot2)
+
+
+df <- read.csv("C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\ALL_ENVs\\M1\\df.csv")
+
+# Create a count matrix of Human vs YOLO values
+
+df <- na.omit(df)
+
+heat_data <- df %>%
+  count(Human, YOLO)
+# Plot as heatmap
+ggplot(heat_data, aes(x = factor(YOLO), y = factor(Human), fill = n)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), color = "black", size=10) +
+  scale_fill_gradient(low = "pink", high = "blue") +
+  labs(title = "Combined Envs. Co-occurrence: Human Annotations vs YOLO Predictions",
+       x = "YOLO Prediction", y = "Human Label") +
+  theme(axis.text = element_text(size = 15), legend.text = element_text(size = 14))
+ggsave(path = "C:\\Users\\fatma.ozair\\Documents\\Fatma\\Manuscript_3\\ALL_ENVs", width = 9, height = 5, device='tiff', dpi=700, filename= "Co-Occurrences.tiff")
